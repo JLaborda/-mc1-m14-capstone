@@ -5,6 +5,7 @@ from dash.dependencies import Input, Output
 import plotly.express as px
 
 import pandas as pd
+import numpy as np
 from datetime import date
 
 
@@ -14,7 +15,8 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 server = app.server
 
 # DATA
-df = pd.read_parquet('/tmp/social_network.parquet')
+#df = pd.read_parquet('/tmp/social_network.parquet')
+df = pd.read_parquet('social_network.parquet')
 
 # LAYOUT
 app.layout = html.Div([
@@ -52,6 +54,12 @@ app.layout = html.Div([
             html.H2(
                 id='total-visit',
                 style={"textAlign": "center"}
+            ),
+            html.Img(id="total-visit-arrow",
+                     style={"width": "25px", "textAlign": "bottom"}),
+            html.H6(
+                id='total-visit-increase',
+                style={"textAlign": "center"}
             )
         ]),
         html.Div([
@@ -60,6 +68,12 @@ app.layout = html.Div([
             html.H2(
                 id='facebook-visit',
                 style={"textAlign": "center"}
+            ),
+            html.Img(id="facebook-visit-arrow",
+                     style={"width": "25px", "textAlign": "bottom"}),
+            html.H6(
+                id='facebook-visit-increase',
+                style={"textAlign": "center"}
             )
         ]),
         html.Div([
@@ -67,6 +81,12 @@ app.layout = html.Div([
                      style={"width": "50px", "textAlign": "center"}),
             html.H2(
                 id='instagram-visit',
+                style={"textAlign": "center"}
+            ),
+            html.Img(id="instagram-visit-arrow",
+                     style={"width": "25px", "textAlign": "bottom"}),
+            html.H6(
+                id='instagram-visit-increase',
                 style={"textAlign": "center"}
             )
         ])
@@ -79,6 +99,12 @@ app.layout = html.Div([
             html.H2(
                 id='twitter-visit',
                 style={"textAlign": "center"}
+            ),
+            html.Img(id="twitter-visit-arrow",
+                     style={"width": "25px", "textAlign": "bottom"}),
+            html.H6(
+                id='twitter-visit-increase',
+                style={"textAlign": "center"}
             )
         ]),
         # Twitch KPI
@@ -87,6 +113,12 @@ app.layout = html.Div([
                      style={"width": "100px", "textAlign": "center"}),
             html.H2(
                 id='twitch-visit',
+                style={"textAlign": "center"}
+            ),
+            html.Img(id="twitch-visit-arrow",
+                     style={"width": "25px", "textAlign": "bottom"}),
+            html.H6(
+                id='twitch-visit-increase',
                 style={"textAlign": "center"}
             )
         ]),
@@ -113,12 +145,87 @@ app.layout = html.Div([
 ])
 
 
+def previous_period_visits(df, start_date_selected, end_date_selected, social_networks_selected, devices_selected):
+    # Calculating the date for the previous month (30 days to ease calculations)
+    prev_period_date = np.datetime64(start_date_selected) - (np.datetime64(end_date_selected) - np.datetime64(start_date_selected))
+    
+    total_prev_month = (
+    df
+    .loc[(df.social_network.isin(social_networks_selected)) &
+         (df.device.isin(devices_selected)) &
+         (df.datetime >= prev_period_date) &
+         (df.datetime <= start_date_selected)]
+    ).shape[0]
+
+    facebook_prev_month = (
+    df
+    .loc[(df.social_network == 'facebook') &
+         (df.social_network.isin(social_networks_selected)) &
+         (df.device.isin(devices_selected)) &
+         (df.datetime >= prev_period_date) &
+         (df.datetime <= start_date_selected)]
+    ).shape[0]
+
+    instagram_prev_month = (
+    df
+    .loc[(df.social_network == 'instagram') &
+         (df.social_network.isin(social_networks_selected)) &
+         (df.device.isin(devices_selected)) &
+         (df.datetime >= prev_period_date) &
+         (df.datetime <= start_date_selected)]
+    ).shape[0]
+
+    twitter_prev_month = (
+    df
+    .loc[(df.social_network == 'twitter') &
+         (df.social_network.isin(social_networks_selected)) &
+         (df.device.isin(devices_selected)) &
+         (df.datetime >= prev_period_date) &
+         (df.datetime <= start_date_selected)]
+    ).shape[0]
+
+    twitch_prev_month = (
+    df
+    .loc[(df.social_network == 'twitch') &
+         (df.social_network.isin(social_networks_selected)) &
+         (df.device.isin(devices_selected)) &
+         (df.datetime >= prev_period_date) &
+         (df.datetime <= start_date_selected)]
+    ).shape[0]
+
+    return total_prev_month, facebook_prev_month, instagram_prev_month, twitter_prev_month, twitch_prev_month
+
+def get_image_src(percentage):
+    # Arrows sources    
+    green_arrow_src = "https://img.icons8.com/pastel-glyph/64/26e07f/circled-up.png"
+    #"https://img.icons8.com/pastel-glyph/64/26e07f/collapse-arrow.png"
+    red_arrow_src = "https://img.icons8.com/pastel-glyph/64/fa314a/circled-down.png"
+    #"https://img.icons8.com/pastel-glyph/64/fa314a/expand-arrow.png"
+    no_increment_src = "https://img.icons8.com/material-outlined/24/000000/horizontal-line.png"
+
+    if(percentage == 0):
+        return no_increment_src
+    if(percentage > 0):
+        return green_arrow_src
+    else:
+        return red_arrow_src
+
 @app.callback(
     Output('total-visit', 'children'),
     Output('facebook-visit', 'children'),
     Output('instagram-visit', 'children'),
     Output('twitter-visit', 'children'),
     Output('twitch-visit', 'children'),
+    Output('total-visit-arrow', 'src'),
+    Output('total-visit-increase', 'children'),
+    Output('facebook-visit-arrow', 'src'),
+    Output('facebook-visit-increase', 'children'),
+    Output('instagram-visit-arrow', 'src'),
+    Output('instagram-visit-increase', 'children'),
+    Output('twitter-visit-arrow', 'src'),
+    Output('twitter-visit-increase', 'children'),
+    Output('twitch-visit-arrow', 'src'),
+    Output('twitch-visit-increase', 'children'),
     Output('total-visit-line', 'figure'),
     Output('total-visit-social-networks-line', 'figure'),
     Output('world-map', 'figure'),
@@ -128,6 +235,19 @@ app.layout = html.Div([
     Input('social-networks-dropdown', 'value'),
     Input('devices-checkbox', 'value'))
 def update_figures(start_date_selected, end_date_selected, social_networks_selected, devices_selected):
+
+    """
+        Output('total-visit-arrow', 'src'),
+        Output('total-visit-increase', 'children'),
+        Output('facebook-visit-arrow', 'src'),
+        Output('facebook-visit-increase', 'children'),
+        Output('instagram-visit-arrow', 'src'),
+        Output('instagram-visit-increase', 'children'),
+        Output('twitter-visit-arrow', 'src'),
+        Output('twitter-visit-increase', 'children'),
+        Output('twitch-visit-arrow', 'src'),
+        Output('twitch-visit-increase', 'children'),
+    """
 
     total_visit = (
         df
@@ -174,6 +294,26 @@ def update_figures(start_date_selected, end_date_selected, social_networks_selec
              (df.datetime <= end_date_selected)]
     ).shape[0]
 
+    
+    # Previous periods
+    total_prev, facebook_prev, instagram_prev, twitter_prev, twitch_prev = (
+        previous_period_visits(df, start_date_selected, end_date_selected, social_networks_selected, devices_selected)
+    )
+    
+    # Calculating Incremental Percentages
+    p_total = (total_visit - total_prev) / total_prev * 100
+    p_facebook = (facebook_visit - facebook_prev) / facebook_prev * 100
+    p_instagram = (instagram_visit - instagram_prev) / instagram_prev * 100
+    p_twitter = (twitter_visit - twitter_prev) / twitter_prev * 100
+    p_twitch = (twitch_visit - twitch_prev) / twitch_prev * 100
+
+    # Choosing Image Source
+    src_total = get_image_src(p_total)
+    src_facebook = get_image_src(p_facebook)
+    src_instagram = get_image_src(p_instagram)
+    src_twitter = get_image_src(p_twitter)
+    src_twitch = get_image_src(p_twitch)
+    
     df_by_month = (
         df
         .loc[(df.social_network.isin(social_networks_selected)) &
@@ -266,9 +406,13 @@ def update_figures(start_date_selected, end_date_selected, social_networks_selec
             'name': 'Total Visits'
         }
     )
-
-    return total_visit, facebook_visit, instagram_visit, twitter_visit, twitch_visit, total_visit_fig, total_visit_social_network_fig, world_map_fig, devices_pie_fig
+    # src_total, p_total, src_facebook, p_facebook, src_instagram, p_instagram, src_twitter, p_twitter, src_twitch, p_twitch,
+     
+    return (total_visit, facebook_visit, instagram_visit, twitter_visit, twitch_visit,
+     src_total, "{:.0f}%".format(p_total), src_facebook, "{:.0f}%".format(p_facebook), src_instagram, "{:.0f}%".format(p_instagram), src_twitter, "{:.0f}%".format(p_twitter), src_twitch, "{:.0f}%".format(p_twitch),
+     total_visit_fig, total_visit_social_network_fig, world_map_fig, devices_pie_fig)
 
 
 if __name__ == '__main__':
-    app.run_server(host='0.0.0.0', port="80")
+    #app.run_server(host='0.0.0.0', port="80")
+    app.run_server(debug="True")
