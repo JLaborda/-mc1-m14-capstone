@@ -15,8 +15,7 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 server = app.server
 
 # DATA
-#df = pd.read_parquet('/tmp/social_network.parquet')
-df = pd.read_parquet('social_network.parquet')
+df = pd.read_parquet('/tmp/social_network.parquet')
 
 # LAYOUT
 app.layout = html.Div([
@@ -414,5 +413,4 @@ def update_figures(start_date_selected, end_date_selected, social_networks_selec
 
 
 if __name__ == '__main__':
-    #app.run_server(host='0.0.0.0', port="80")
-    app.run_server(debug="True")
+    app.run_server(host='0.0.0.0', port="80")
