@@ -209,6 +209,12 @@ def get_image_src(percentage):
     else:
         return red_arrow_src
 
+def calculate_incremental_percentage(visits_now, visits_prev):
+    try:
+        return round((visits_now - visits_prev) / visits_prev * 100)
+    except:
+        return 0
+
 @app.callback(
     Output('total-visit', 'children'),
     Output('facebook-visit', 'children'),
@@ -235,19 +241,7 @@ def get_image_src(percentage):
     Input('devices-checkbox', 'value'))
 def update_figures(start_date_selected, end_date_selected, social_networks_selected, devices_selected):
 
-    """
-        Output('total-visit-arrow', 'src'),
-        Output('total-visit-increase', 'children'),
-        Output('facebook-visit-arrow', 'src'),
-        Output('facebook-visit-increase', 'children'),
-        Output('instagram-visit-arrow', 'src'),
-        Output('instagram-visit-increase', 'children'),
-        Output('twitter-visit-arrow', 'src'),
-        Output('twitter-visit-increase', 'children'),
-        Output('twitch-visit-arrow', 'src'),
-        Output('twitch-visit-increase', 'children'),
-    """
-
+    #print(social_networks_selected)
     total_visit = (
         df
         .loc[(df.social_network.isin(social_networks_selected)) &
@@ -300,11 +294,11 @@ def update_figures(start_date_selected, end_date_selected, social_networks_selec
     )
     
     # Calculating Incremental Percentages
-    p_total = (total_visit - total_prev) / total_prev * 100
-    p_facebook = (facebook_visit - facebook_prev) / facebook_prev * 100
-    p_instagram = (instagram_visit - instagram_prev) / instagram_prev * 100
-    p_twitter = (twitter_visit - twitter_prev) / twitter_prev * 100
-    p_twitch = (twitch_visit - twitch_prev) / twitch_prev * 100
+    p_total = calculate_incremental_percentage(total_visit, total_prev)
+    p_facebook = calculate_incremental_percentage(facebook_visit, facebook_prev) #(facebook_visit - facebook_prev) / facebook_prev * 100
+    p_instagram = calculate_incremental_percentage(instagram_visit, instagram_prev) #(instagram_visit - instagram_prev) / instagram_prev * 100
+    p_twitter = calculate_incremental_percentage(twitter_visit, twitter_prev) #(twitter_visit - twitter_prev) / twitter_prev * 100
+    p_twitch = calculate_incremental_percentage(twitch_visit, twitch_prev)
 
     # Choosing Image Source
     src_total = get_image_src(p_total)
